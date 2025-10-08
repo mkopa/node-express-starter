@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Boarding Schema",
+  "description": "Schema for validating passenger boarding data",
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string",
+      "format": "email",
+      "minLength": 5,
+      "maxLength": 255,
+      "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+    },
+    "phone": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 20,
+      "pattern": "^\\+?[0-9\\s\\-()]+$"
+    },
+    "first_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[a-zA-ZÀ-ÿ\\s'-]+$"
+    },
+    "last_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[a-zA-ZÀ-ÿ\\s'-]+$"
+    },
+    "company_id": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    }
+  },
+  "required": ["email", "first_name", "last_name", "company_id"],
+  "additionalProperties": false
+}
