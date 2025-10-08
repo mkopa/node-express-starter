@@ -1,7 +1,7 @@
 {
   "name": "boarding-service",
   "version": "1.0.0",
-  "description": "User boarding service (Express + TypeScript) – recruitment task",
+  "description": "User boarding service (Express + TypeScript)",
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only --ignore-watch node_modules --no-notify src/index.ts",
