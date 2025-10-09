@@ -1,32 +1,27 @@
 import { Service, Inject } from 'typedi';
 import { Pool, PoolConnection, RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 import { BaseRepository } from './base/BaseRepository';
+import { IUserRepository } from '../types/interfaces/IUserRepository';
+import { User } from '../types/entities/User.types';
+import { CreateUserDto } from '../types/dtos/user.dto';
 
-export interface User {
-  id: number;
-  email: string;
-  phone?: string;
-  first_name: string;
-  last_name: string;
-  is_active: number;
-  has_password: number;
-  password_hash?: string;
-  created_at: Date;
-}
+// Export User type for use in other files
+export { User };
 
-export interface CreateUserDto {
-  email: string;
-  phone?: string;
-  first_name: string;
-  last_name: string;
-}
-
+/**
+ * User Repository Implementation
+ * Handles all user-related database operations
+ * Implements IUserRepository interface for dependency inversion
+ */
 @Service()
-export class UserRepository extends BaseRepository {
+export class UserRepository extends BaseRepository implements IUserRepository {
   constructor(@Inject('DB_POOL') private readonly pool: Pool) {
     super();
   }
 
+  /**
+   * Find user by email address
+   */
   async findByEmail(email: string, conn?: PoolConnection): Promise<User | null> {
     const client = conn || this.pool;
     const [rows] = await client.query<RowDataPacket[]>('SELECT * FROM users WHERE email = ?', [
@@ -35,6 +30,9 @@ export class UserRepository extends BaseRepository {
     return (rows[0] as User) || null;
   }
 
+  /**
+   * Find user by ID
+   */
   async findById(userId: number, conn?: PoolConnection): Promise<User | null> {
     const client = conn || this.pool;
     const [rows] = await client.query<RowDataPacket[]>('SELECT * FROM users WHERE id = ?', [
@@ -43,6 +41,10 @@ export class UserRepository extends BaseRepository {
     return (rows[0] as User) || null;
   }
 
+  /**
+   * Create new user
+   * User is created as inactive without password
+   */
   async create(data: CreateUserDto, conn?: PoolConnection): Promise<number> {
     const client = conn || this.pool;
     const [result] = await client.query<ResultSetHeader>(
@@ -53,6 +55,10 @@ export class UserRepository extends BaseRepository {
     return result.insertId;
   }
 
+  /**
+   * Attach user to company (many-to-many relationship)
+   * Uses INSERT IGNORE to prevent duplicate entries
+   */
   async attachToCompany(userId: number, companyId: number, conn?: PoolConnection): Promise<void> {
     const client = conn || this.pool;
     await client.query('INSERT IGNORE INTO user_companies (user_id, company_id) VALUES (?, ?)', [
@@ -61,6 +67,10 @@ export class UserRepository extends BaseRepository {
     ]);
   }
 
+  /**
+   * Set user password and activate account
+   * Marks user as active and sets has_password flag
+   */
   async setPassword(userId: number, passwordHash: string, conn?: PoolConnection): Promise<void> {
     const client = conn || this.pool;
     await client.query(
@@ -71,6 +81,9 @@ export class UserRepository extends BaseRepository {
     );
   }
 
+  /**
+   * Get database connection for transaction management
+   */
   async getConnection(): Promise<PoolConnection> {
     return await this.pool.getConnection();
   }

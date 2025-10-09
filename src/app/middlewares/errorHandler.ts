@@ -1,39 +1,35 @@
 import { Request, Response, NextFunction } from 'express';
+import { DomainError, isDomainError } from '../../types/errors/DomainErrors';
+import { ErrorResponse } from '../../types/responses/error.response';
 import logger from '../../utils/logger';
 
 /**
- * Custom error interface with status code
- */
-interface AppError extends Error {
-  status?: number;
-  statusCode?: number;
-}
-
-/**
- * Error response structure
- */
-interface ErrorResponse {
-  error: string;
-  timestamp: string;
-  path: string;
-  requestId?: string;
-  stack?: string[];
-}
-
-/**
  * Centralized error handling middleware
- * Logs errors and sends appropriate HTTP responses
- * Handles both custom AppError and generic Error objects
+ * Handles both domain errors and generic errors
+ * Logs errors with context and sends appropriate HTTP responses
  *
  * Error handling strategy:
- * 1. Log error with context (method, path, user info)
- * 2. Determine HTTP status code (from error or default 500)
- * 3. Send appropriate JSON response
- * 4. Include stack trace only in development
+ * 1. Check if error is a domain error (custom errors with statusCode)
+ * 2. Log error with context (method, path, user info)
+ * 3. Determine HTTP status code
+ * 4. Send appropriate JSON response
+ * 5. Include stack trace only in development
  */
-export function errorHandler(err: AppError, req: Request, res: Response, _next: NextFunction) {
+export function errorHandler(
+  err: Error | DomainError,
+  req: Request,
+  res: Response,
+  _next: NextFunction
+): void {
   // Determine status code
-  const statusCode = err.status || err.statusCode || 500;
+  let statusCode = 500;
+  let errorCode = 'INTERNAL_SERVER_ERROR';
+
+  // Handle domain errors (custom errors with statusCode)
+  if (isDomainError(err)) {
+    statusCode = err.statusCode;
+    errorCode = err.errorCode;
+  }
 
   // Log error with context
   const logContext = {
@@ -41,12 +37,13 @@ export function errorHandler(err: AppError, req: Request, res: Response, _next: 
     method: req.method,
     path: req.path,
     statusCode,
+    errorCode,
     error: err.message,
     ip: req.ip || req.socket.remoteAddress,
     userAgent: req.get('user-agent'),
   };
 
-  // Log at appropriate level
+  // Log at appropriate level based on status code
   if (statusCode >= 500) {
     logger.error('Server error:', logContext);
     if (err.stack) {

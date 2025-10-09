@@ -14,7 +14,20 @@
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
     "types": ["node"],
-    "typeRoots": ["./node_modules/@types", "./src/types"]
+    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "baseUrl": ".",
+    "paths": {
+      "@/types": ["src/types"],
+      "@/types/*": ["src/types/*"],
+      "@/repositories": ["src/repositories"],
+      "@/repositories/*": ["src/repositories/*"],
+      "@/services": ["src/services"],
+      "@/services/*": ["src/services/*"],
+      "@/controllers": ["src/controllers"],
+      "@/controllers/*": ["src/controllers/*"],
+      "@/utils": ["src/utils"],
+      "@/utils/*": ["src/utils/*"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.test.ts"]

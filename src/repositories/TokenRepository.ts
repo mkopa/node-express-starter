@@ -1,21 +1,24 @@
 import { Service, Inject } from 'typedi';
 import { Pool, PoolConnection, RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 import { BaseRepository } from './base/BaseRepository';
+import { ITokenRepository } from '../types/interfaces/ITokenRepository';
+import { PasswordToken } from '../types/entities/PasswordToken.types';
 
-export interface PasswordToken {
-  id: number;
-  user_id: number;
-  token_hash: string;
-  created_at: Date;
-  used: number;
-}
-
+/**
+ * Token Repository Implementation
+ * Handles all password token related database operations
+ * Implements ITokenRepository interface for dependency inversion
+ */
 @Service()
-export class TokenRepository extends BaseRepository {
+export class TokenRepository extends BaseRepository implements ITokenRepository {
   constructor(@Inject('DB_POOL') private readonly pool: Pool) {
     super();
   }
 
+  /**
+   * Create new password reset token
+   * Token is stored as hash for security
+   */
   async create(userId: number, tokenHash: string, conn?: PoolConnection): Promise<number> {
     const client = conn || this.pool;
     const [result] = await client.query<ResultSetHeader>(
@@ -25,6 +28,10 @@ export class TokenRepository extends BaseRepository {
     return result.insertId;
   }
 
+  /**
+   * Find unused token by hash
+   * Only returns tokens that haven't been used yet
+   */
   async findUnusedByHash(tokenHash: string, conn?: PoolConnection): Promise<PasswordToken | null> {
     const client = conn || this.pool;
     const [rows] = await client.query<RowDataPacket[]>(
@@ -34,11 +41,20 @@ export class TokenRepository extends BaseRepository {
     return (rows[0] as PasswordToken) || null;
   }
 
+  /**
+   * Mark token as used
+   * Prevents token reuse (one-time tokens)
+   */
   async markAsUsed(tokenId: number, conn?: PoolConnection): Promise<void> {
     const client = conn || this.pool;
     await client.query('UPDATE password_tokens SET used = 1 WHERE id = ?', [tokenId]);
   }
 
+  /**
+   * Delete expired tokens (cleanup job)
+   * Should be run periodically (e.g., daily cron job)
+   * @returns Number of deleted tokens
+   */
   async deleteExpired(expiryHours: number): Promise<number> {
     const [result] = await this.pool.query<ResultSetHeader>(
       `DELETE FROM password_tokens 
