@@ -11,7 +11,9 @@ const ajv = new Ajv({
 addFormats(ajv); // email, uri, date, ipv4 etc.
 
 /**
- * Middleware do walidacji request.body względem JSON Schema
+ * Middleware for request.body validation using AJV
+ * @param schema - JSON Schema to validate against
+ * @returns Express middleware function
  */
 export function validateSchema(schema: AnySchema) {
   const validate = ajv.compile(schema);

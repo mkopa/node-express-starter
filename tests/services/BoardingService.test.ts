@@ -234,7 +234,7 @@ describe('BoardingService', () => {
 
   describe('setPasswordFromToken', () => {
     const validToken = 'a'.repeat(64); // 64-char hex
-    const validPassword = 'SecurePassword123!';
+    const validPassword = 'SecurePassw0rd123!';
 
     it('should successfully set password with valid token', async () => {
       // Arrange

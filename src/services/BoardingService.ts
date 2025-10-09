@@ -12,7 +12,12 @@ import {
   TokenExpiredError,
   WeakPasswordError,
 } from '../types/errors/DomainErrors';
-import { generateSecureToken, hashPassword, hashTokenForStorage } from '../utils/crypto';
+import {
+  generateSecureToken,
+  hashPassword,
+  hashTokenForStorage,
+  validatePasswordStrength,
+} from '../utils/crypto';
 import logger from '../utils/logger';
 
 /**
@@ -158,9 +163,10 @@ export class BoardingService {
       }
       logger.debug(`Token valid (${diffHours.toFixed(2)}h old, expires after ${expiryHours}h)`);
 
-      // 3. Validate password length (additional validation in schema)
-      if (password.length < 12) {
-        throw new WeakPasswordError('Password must be at least 12 characters');
+      // 3. Validate password (additional validation in schema)
+      const validation = validatePasswordStrength(password);
+      if (!validation.valid) {
+        throw new WeakPasswordError(validation.errors.join(', '));
       }
 
       // 4. Hash password with Argon2 (OWASP recommended)
