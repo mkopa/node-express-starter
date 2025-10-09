@@ -19,12 +19,16 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 20s
 
   adminer:
     image: adminer:latest
     restart: unless-stopped
     ports:
       - "8888:8080"
+    depends_on:
+      db:
+        condition: service_healthy
 
   app:
     build:
@@ -46,6 +50,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     restart: unless-stopped
 
 volumes:
