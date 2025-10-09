@@ -11,7 +11,8 @@
     "format": "prettier --write \"src/**/*.ts\" \"*.md\"",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "test:e2e": "jest --runInBand --detectOpenHandles --verbose tests/e2e"
   },
   "keywords": [
     "nodejs",

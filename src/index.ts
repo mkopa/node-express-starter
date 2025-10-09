@@ -7,6 +7,9 @@ import { UserRepository } from './repositories/UserRepository';
 import { CompanyRepository } from './repositories/CompanyRepository';
 import { TokenRepository } from './repositories/TokenRepository';
 import logger from './utils/logger';
+import { EventBus } from './domain/EventBus';
+// Importing event handlers registers them with EventBus (see handler file)
+import './services/EventHandlers/SendPasswordEmailHandler';
 
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
 

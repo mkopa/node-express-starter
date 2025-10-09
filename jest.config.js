@@ -15,9 +15,11 @@ module.exports = {
   
   // Test file patterns
   testMatch: [
-    '**/__tests__/**/*.ts',
-    '**/?(*.)+(spec|test).ts'
-  ],
+  '**/__tests__/**/*.ts',
+  '**/?(*.)+(spec|test).ts',
+  '**/tests/e2e/**/*.ts'
+],
+
   
   // Transform TypeScript files
   transform: {
@@ -37,7 +39,7 @@ module.exports = {
   ],
   
   // Coverage thresholds (adjust as needed)
-  coverageThresholds: {
+  coverageThreshold: {
     global: {
       branches: 70,
       functions: 70,

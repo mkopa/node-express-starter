@@ -14,6 +14,8 @@ import {
 } from '../types/errors/DomainErrors';
 import { generateSecureToken, hashPassword, hashTokenForStorage } from '../utils/crypto';
 import logger from '../utils/logger';
+import { EventBus } from '../domain/EventBus';
+import { UserOnboardedEvent } from '../domain/events/UserOnboardedEvent';
 
 /**
  * Boarding Service
@@ -26,7 +28,8 @@ export class BoardingService {
   constructor(
     @Inject('IUserRepository') private readonly userRepository: IUserRepository,
     @Inject('ICompanyRepository') private readonly companyRepository: ICompanyRepository,
-    @Inject('ITokenRepository') private readonly tokenRepository: ITokenRepository
+    @Inject('ITokenRepository') private readonly tokenRepository: ITokenRepository,
+    @Inject('EventBus') private readonly eventBus: EventBus
   ) {
     logger.debug('BoardingService initialized with DI');
   }
@@ -41,6 +44,7 @@ export class BoardingService {
    * 4. Attach user to company
    * 5. Generate secure one-time token
    * 6. Store hashed token in database
+   * 7. Publishes UserOnboardedEvent to EventBus after successful commit.
    *
    * All operations are wrapped in a transaction for data consistency
    * On any error, transaction is rolled back automatically
@@ -98,8 +102,23 @@ export class BoardingService {
       await conn.commit();
       logger.info(`✅ User boarding completed successfully for: ${data.email}`);
 
-      // In production: send token via email
-      // await emailService.sendPasswordSetupEmail(data.email, token);
+      // 7. Publish domain event AFTER successful commit
+      // Event contains raw token so that handlers (email sender) can construct link.
+      // In production the raw token should be sent via secure channels; we do not persist plain token.
+      try {
+        await this.eventBus.publish(
+          new UserOnboardedEvent({
+            userId,
+            email: data.email,
+            companyId: data.company_id,
+            token,
+          })
+        );
+        logger.debug('UserOnboardedEvent published to EventBus');
+      } catch (eventErr) {
+        // Publishing failure shouldn't break onboarding result; log and continue.
+        logger.error('Failed to publish onboarding event:', eventErr);
+      }
 
       return {
         userId,
@@ -167,13 +186,23 @@ export class BoardingService {
       const passwordHash = await hashPassword(password);
       logger.debug('Password hashed with Argon2');
 
-      // 5. Update user: set password, activate account
-      await this.userRepository.setPassword(tokenRow.user_id, passwordHash, conn);
-      logger.info(`Password set for user ${tokenRow.user_id}`);
+      // Begin transaction: updating user password and marking token used should be atomic
+      await conn.beginTransaction();
 
-      // 6. Mark token as used (prevent reuse)
-      await this.tokenRepository.markAsUsed(tokenRow.id, conn);
-      logger.debug(`Token ${tokenRow.id} marked as used`);
+      try {
+        // 5. Update user: set password, activate account
+        await this.userRepository.setPassword(tokenRow.user_id, passwordHash, conn);
+        logger.info(`Password set for user ${tokenRow.user_id}`);
+
+        // 6. Mark token as used (prevent reuse)
+        await this.tokenRepository.markAsUsed(tokenRow.id, conn);
+        logger.debug(`Token ${tokenRow.id} marked as used`);
+
+        await conn.commit();
+      } catch (innerErr) {
+        await conn.rollback();
+        throw innerErr;
+      }
 
       logger.info('✅ Password setup completed successfully');
 

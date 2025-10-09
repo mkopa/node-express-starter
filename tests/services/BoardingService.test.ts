@@ -32,13 +32,22 @@ describe('BoardingService', () => {
     // Reset DI container
     Container.reset();
 
+    const fakeConn = {
+      beginTransaction: jest.fn(),
+      commit: jest.fn(),
+      rollback: jest.fn(),
+      release: jest.fn(),
+      query: jest.fn(),
+    };
+
+
     mockUserRepo = {
       findByEmail: jest.fn(),
       findById: jest.fn(),
       create: jest.fn(),
       attachToCompany: jest.fn(),
       setPassword: jest.fn(),
-      getConnection: jest.fn(),
+      getConnection: jest.fn().mockReturnValue(fakeConn),
     };
 
     mockCompanyRepo = {
