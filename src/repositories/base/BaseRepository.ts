@@ -13,9 +13,12 @@ export abstract class BaseRepository {
   /**
    * Build WHERE clause safely
    */
-  protected buildWhereClause(conditions: Record<string, any>): { clause: string; values: any[] } {
+  protected buildWhereClause(conditions: Record<string, unknown>): {
+    clause: string;
+    values: unknown[];
+  } {
     const clauses: string[] = [];
-    const values: any[] = [];
+    const values: unknown[] = [];
 
     for (const [key, value] of Object.entries(conditions)) {
       if (value !== undefined && value !== null) {

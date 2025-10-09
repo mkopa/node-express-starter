@@ -4,6 +4,21 @@ import { validateSchema } from '../middlewares/ajvValidator';
 import boardingSchema from '../../validation/schemas/boarding.schema.json';
 import setPasswordSchema from '../../validation/schemas/setPassword.schema.json';
 import { BoardingController } from '../../controllers/BoardingController';
+import { JSONSchemaType } from 'ajv';
+
+// Type for boarding schema
+interface BoardingSchemaType {
+  email: string;
+  phone?: string;
+  first_name: string;
+  last_name: string;
+  company_id: number;
+}
+
+// Type for password schema
+interface SetPasswordSchemaType {
+  password: string;
+}
 
 /**
  * Internal endpoints router
@@ -29,7 +44,7 @@ export function internalRouter(): Router {
    */
   router.post(
     '/boarding',
-    validateSchema(boardingSchema as any),
+    validateSchema(boardingSchema as JSONSchemaType<BoardingSchemaType>),
     controller.createUser.bind(controller)
   );
 
@@ -45,7 +60,7 @@ export function internalRouter(): Router {
    */
   router.post(
     '/set-password/:token',
-    validateSchema(setPasswordSchema as any),
+    validateSchema(setPasswordSchema as JSONSchemaType<SetPasswordSchemaType>),
     controller.setPassword.bind(controller)
   );
 

@@ -8,12 +8,6 @@ import { TokenRepository } from '../../src/repositories/TokenRepository';
 /**
  * Example test suite for BoardingService
  * Demonstrates how proper DI makes testing easy with mocks
- * 
- * To run these tests:
- * 1. npm install --save-dev jest @types/jest ts-jest
- * 2. Add to package.json: "test": "jest"
- * 3. Create jest.config.js
- * 4. npm test
  */
 
 describe('BoardingService', () => {
@@ -24,7 +18,6 @@ describe('BoardingService', () => {
 
   /**
    * Setup: Create mocked repositories and inject them
-   * This is the power of DI - easy to test!
    */
   beforeEach(() => {
     // Reset DI container
@@ -141,16 +134,16 @@ describe('BoardingService', () => {
       mockCompanyRepo.findById.mockResolvedValue(null); // Company not found
 
       // Act & Assert
-      await expect(boardingService.onboardUser(validBoardingData))
-        .rejects
-        .toThrow(AppError);
-
-      await expect(boardingService.onboardUser(validBoardingData))
-        .rejects
-        .toMatchObject({
+      try {
+        await boardingService.onboardUser(validBoardingData);
+        fail('Expected AppError to be thrown');
+      } catch (error) {
+        expect(error).toBeInstanceOf(AppError);
+        expect(error).toMatchObject({
           status: 404,
           message: 'Company with id 1 does not exist',
         });
+      }
 
       // Verify rollback was called
       expect(mockConnection.rollback).toHaveBeenCalledTimes(1);
@@ -174,16 +167,24 @@ describe('BoardingService', () => {
       mockUserRepo.findByEmail.mockResolvedValue({
         id: 999,
         email: 'test@example.com',
-        // ... other fields
+        first_name: 'John',
+        last_name: 'Doe',
+        is_active: 1,
+        has_password: 1,
+        created_at: new Date(),
       } as any); // User exists
 
       // Act & Assert
-      await expect(boardingService.onboardUser(validBoardingData))
-        .rejects
-        .toMatchObject({
+      try {
+        await boardingService.onboardUser(validBoardingData);
+        fail('Expected AppError to be thrown');
+      } catch (error) {
+        expect(error).toBeInstanceOf(AppError);
+        expect(error).toMatchObject({
           status: 409,
           message: 'User with this email already exists',
         });
+      }
 
       expect(mockConnection.rollback).toHaveBeenCalledTimes(1);
     });

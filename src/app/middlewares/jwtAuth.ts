@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import { User } from '../../repositories/UserRepository';
 
 export interface JWTPayload {
-  userId: number;
+  id: number;
   email: string;
   role: string;
 }
@@ -21,7 +21,7 @@ export function jwtAuth(req: Request, res: Response, next: NextFunction) {
     const decoded = jwt.verify(token, secret) as JWTPayload;
 
     // Attach user to request
-    req.user = decoded as any;
+    req.user = decoded;
     next();
   } catch (err) {
     return res.status(401).json({ error: 'Invalid token' });

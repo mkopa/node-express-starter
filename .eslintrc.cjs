@@ -18,7 +18,11 @@ module.exports = {
   },
   rules: {
     "no-console": "off",
-    "@typescript-eslint/no-explicit-any": "warn",
-    "@typescript-eslint/explicit-function-return-type": "off"
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/no-unused-vars": ["error", {
+      "argsIgnorePattern": "^_", // Allow unused variables starting with _
+      "varsIgnorePattern": "^_"
+    }]
   }
 };

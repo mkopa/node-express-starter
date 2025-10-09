@@ -10,6 +10,17 @@ interface AppError extends Error {
 }
 
 /**
+ * Error response structure
+ */
+interface ErrorResponse {
+  error: string;
+  timestamp: string;
+  path: string;
+  requestId?: string;
+  stack?: string[];
+}
+
+/**
  * Centralized error handling middleware
  * Logs errors and sends appropriate HTTP responses
  * Handles both custom AppError and generic Error objects
@@ -20,7 +31,7 @@ interface AppError extends Error {
  * 3. Send appropriate JSON response
  * 4. Include stack trace only in development
  */
-export function errorHandler(err: AppError, req: Request, res: Response, next: NextFunction) {
+export function errorHandler(err: AppError, req: Request, res: Response, _next: NextFunction) {
   // Determine status code
   const statusCode = err.status || err.statusCode || 500;
 
@@ -46,7 +57,7 @@ export function errorHandler(err: AppError, req: Request, res: Response, next: N
   }
 
   // Prepare error response
-  const errorResponse: any = {
+  const errorResponse: ErrorResponse = {
     error: err.message || 'Internal Server Error',
     timestamp: new Date().toISOString(),
     path: req.path,

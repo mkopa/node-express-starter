@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import validator from 'validator';
 
-function sanitizeObject(obj: any): void {
+function sanitizeObject(obj: Record<string, unknown>): void {
   if (!obj || typeof obj !== 'object') {
     return;
   }
@@ -12,7 +12,7 @@ function sanitizeObject(obj: any): void {
       obj[key] = validator.escape(value);
     } else if (typeof value === 'object') {
       // Recursive call for nested objects or arrays
-      sanitizeObject(value);
+      sanitizeObject(value as Record<string, unknown>);
     }
   }
 }

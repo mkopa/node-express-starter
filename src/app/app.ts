@@ -15,7 +15,7 @@ const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
     const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'];
 
-  if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -49,12 +49,7 @@ export function createApp(): Application {
 
   const API_VERSION = '/api/v1';
   app.use(`${API_VERSION}/health`, healthRouter());
-  app.use(
-    `${API_VERSION}/internal`,
-    basicAuth,
-    rateLimiter,
-    internalRouter()
-  );
+  app.use(`${API_VERSION}/internal`, basicAuth, rateLimiter, internalRouter());
 
   // ==========================================
   // Error Handlers
