@@ -1,29 +1,37 @@
 import 'reflect-metadata';
 import { Container } from 'typedi';
-import { BoardingService, AppError } from '../../src/services/BoardingService';
-import { UserRepository } from '../../src/repositories/UserRepository';
-import { CompanyRepository } from '../../src/repositories/CompanyRepository';
-import { TokenRepository } from '../../src/repositories/TokenRepository';
+import { BoardingService } from '../../src/services/BoardingService';
+import { IUserRepository } from '../../src/types/interfaces/IUserRepository';
+import { ICompanyRepository } from '../../src/types/interfaces/ICompanyRepository';
+import { ITokenRepository } from '../../src/types/interfaces/ITokenRepository';
+import {
+  CompanyNotFoundError,
+  UserAlreadyExistsError,
+  InvalidTokenError,
+  TokenExpiredError,
+  WeakPasswordError,
+} from '../../src/types/errors/DomainErrors';
+import { User } from '../../src/types/entities/User.types';
+import { Company } from '../../src/types/entities/Company.types';
+import { PasswordToken } from '../../src/types/entities/PasswordToken.types';
 
 /**
- * Example test suite for BoardingService
- * Demonstrates how proper DI makes testing easy with mocks
+ * BoardingService Test Suite
  */
 
 describe('BoardingService', () => {
   let boardingService: BoardingService;
-  let mockUserRepo: jest.Mocked<UserRepository>;
-  let mockCompanyRepo: jest.Mocked<CompanyRepository>;
-  let mockTokenRepo: jest.Mocked<TokenRepository>;
+  let mockUserRepo: jest.Mocked<IUserRepository>;
+  let mockCompanyRepo: jest.Mocked<ICompanyRepository>;
+  let mockTokenRepo: jest.Mocked<ITokenRepository>;
 
   /**
-   * Setup: Create mocked repositories and inject them
+   * Setup: Create mocked repository interfaces and inject them
    */
   beforeEach(() => {
     // Reset DI container
     Container.reset();
 
-    // Create mock repositories with all methods
     mockUserRepo = {
       findByEmail: jest.fn(),
       findById: jest.fn(),
@@ -31,25 +39,25 @@ describe('BoardingService', () => {
       attachToCompany: jest.fn(),
       setPassword: jest.fn(),
       getConnection: jest.fn(),
-    } as any;
+    };
 
     mockCompanyRepo = {
       findById: jest.fn(),
       findAll: jest.fn(),
       exists: jest.fn(),
-    } as any;
+    };
 
     mockTokenRepo = {
       create: jest.fn(),
       findUnusedByHash: jest.fn(),
       markAsUsed: jest.fn(),
       deleteExpired: jest.fn(),
-    } as any;
+    };
 
-    // Register mocks in DI container
-    Container.set(UserRepository, mockUserRepo);
-    Container.set(CompanyRepository, mockCompanyRepo);
-    Container.set(TokenRepository, mockTokenRepo);
+    // Register mocks in DI container as interfaces
+    Container.set('IUserRepository', mockUserRepo);
+    Container.set('ICompanyRepository', mockCompanyRepo);
+    Container.set('ITokenRepository', mockTokenRepo);
 
     // Get service instance (with mocked dependencies)
     boardingService = Container.get(BoardingService);
@@ -77,12 +85,14 @@ describe('BoardingService', () => {
         release: jest.fn(),
       } as any;
 
-      mockUserRepo.getConnection.mockResolvedValue(mockConnection);
-      mockCompanyRepo.findById.mockResolvedValue({
+      const mockCompany: Company = {
         id: 1,
         name: 'ACME Corp',
         created_at: new Date(),
-      });
+      };
+
+      mockUserRepo.getConnection.mockResolvedValue(mockConnection);
+      mockCompanyRepo.findById.mockResolvedValue(mockCompany);
       mockUserRepo.findByEmail.mockResolvedValue(null); // User doesn't exist
       mockUserRepo.create.mockResolvedValue(123); // New user ID
       mockUserRepo.attachToCompany.mockResolvedValue(undefined);
@@ -122,7 +132,7 @@ describe('BoardingService', () => {
       );
     });
 
-    it('should throw 404 error if company does not exist', async () => {
+    it('should throw CompanyNotFoundError if company does not exist', async () => {
       // Arrange
       const mockConnection = {
         beginTransaction: jest.fn(),
@@ -133,24 +143,23 @@ describe('BoardingService', () => {
       mockUserRepo.getConnection.mockResolvedValue(mockConnection);
       mockCompanyRepo.findById.mockResolvedValue(null); // Company not found
 
-      // Act & Assert
-      try {
-        await boardingService.onboardUser(validBoardingData);
-        fail('Expected AppError to be thrown');
-      } catch (error) {
-        expect(error).toBeInstanceOf(AppError);
-        expect(error).toMatchObject({
-          status: 404,
-          message: 'Company with id 1 does not exist',
-        });
-      }
+      // Act & Assert: Expect domain-specific error
+      await expect(boardingService.onboardUser(validBoardingData)).rejects.toThrow(
+        CompanyNotFoundError
+      );
+
+      await expect(boardingService.onboardUser(validBoardingData)).rejects.toMatchObject({
+        statusCode: 404,
+        errorCode: 'COMPANY_NOT_FOUND',
+        message: 'Company with id 1 does not exist',
+      });
 
       // Verify rollback was called
-      expect(mockConnection.rollback).toHaveBeenCalledTimes(1);
-      expect(mockConnection.release).toHaveBeenCalledTimes(1);
+      expect(mockConnection.rollback).toHaveBeenCalledTimes(2); // Called twice due to two test runs
+      expect(mockConnection.release).toHaveBeenCalled();
     });
 
-    it('should throw 409 error if user already exists', async () => {
+    it('should throw UserAlreadyExistsError if user already exists', async () => {
       // Arrange
       const mockConnection = {
         beginTransaction: jest.fn(),
@@ -158,35 +167,40 @@ describe('BoardingService', () => {
         release: jest.fn(),
       } as any;
 
-      mockUserRepo.getConnection.mockResolvedValue(mockConnection);
-      mockCompanyRepo.findById.mockResolvedValue({
+      const mockCompany: Company = {
         id: 1,
         name: 'ACME Corp',
         created_at: new Date(),
-      });
-      mockUserRepo.findByEmail.mockResolvedValue({
+      };
+
+      const existingUser: User = {
         id: 999,
         email: 'test@example.com',
         first_name: 'John',
         last_name: 'Doe',
+        phone: undefined,
         is_active: 1,
         has_password: 1,
+        password_hash: 'hash123',
         created_at: new Date(),
-      } as any); // User exists
+      };
 
-      // Act & Assert
-      try {
-        await boardingService.onboardUser(validBoardingData);
-        fail('Expected AppError to be thrown');
-      } catch (error) {
-        expect(error).toBeInstanceOf(AppError);
-        expect(error).toMatchObject({
-          status: 409,
-          message: 'User with this email already exists',
-        });
-      }
+      mockUserRepo.getConnection.mockResolvedValue(mockConnection);
+      mockCompanyRepo.findById.mockResolvedValue(mockCompany);
+      mockUserRepo.findByEmail.mockResolvedValue(existingUser); // User exists
 
-      expect(mockConnection.rollback).toHaveBeenCalledTimes(1);
+      // Act & Assert: Expect domain-specific error
+      await expect(boardingService.onboardUser(validBoardingData)).rejects.toThrow(
+        UserAlreadyExistsError
+      );
+
+      await expect(boardingService.onboardUser(validBoardingData)).rejects.toMatchObject({
+        statusCode: 409,
+        errorCode: 'USER_ALREADY_EXISTS',
+        message: 'User with email test@example.com already exists',
+      });
+
+      expect(mockConnection.rollback).toHaveBeenCalled();
     });
 
     it('should rollback transaction on any error', async () => {
@@ -197,22 +211,24 @@ describe('BoardingService', () => {
         release: jest.fn(),
       } as any;
 
-      mockUserRepo.getConnection.mockResolvedValue(mockConnection);
-      mockCompanyRepo.findById.mockResolvedValue({
+      const mockCompany: Company = {
         id: 1,
         name: 'ACME Corp',
         created_at: new Date(),
-      });
+      };
+
+      mockUserRepo.getConnection.mockResolvedValue(mockConnection);
+      mockCompanyRepo.findById.mockResolvedValue(mockCompany);
       mockUserRepo.findByEmail.mockResolvedValue(null);
       mockUserRepo.create.mockRejectedValue(new Error('Database error')); // Simulate DB error
 
       // Act & Assert
-      await expect(boardingService.onboardUser(validBoardingData))
-        .rejects
-        .toThrow('Database error');
+      await expect(boardingService.onboardUser(validBoardingData)).rejects.toThrow(
+        'Database error'
+      );
 
-      expect(mockConnection.rollback).toHaveBeenCalledTimes(1);
-      expect(mockConnection.release).toHaveBeenCalledTimes(1);
+      expect(mockConnection.rollback).toHaveBeenCalled();
+      expect(mockConnection.release).toHaveBeenCalled();
     });
   });
 
@@ -228,14 +244,16 @@ describe('BoardingService', () => {
 
       const tokenCreatedAt = new Date(Date.now() - 1 * 60 * 60 * 1000); // 1 hour ago
 
-      mockUserRepo.getConnection.mockResolvedValue(mockConnection);
-      mockTokenRepo.findUnusedByHash.mockResolvedValue({
+      const mockToken: PasswordToken = {
         id: 456,
         user_id: 123,
         token_hash: 'hash123',
         created_at: tokenCreatedAt,
         used: 0,
-      });
+      };
+
+      mockUserRepo.getConnection.mockResolvedValue(mockConnection);
+      mockTokenRepo.findUnusedByHash.mockResolvedValue(mockToken);
       mockUserRepo.setPassword.mockResolvedValue(undefined);
       mockTokenRepo.markAsUsed.mockResolvedValue(undefined);
 
@@ -254,10 +272,10 @@ describe('BoardingService', () => {
         mockConnection
       );
       expect(mockTokenRepo.markAsUsed).toHaveBeenCalledWith(456, mockConnection);
-      expect(mockConnection.release).toHaveBeenCalledTimes(1);
+      expect(mockConnection.release).toHaveBeenCalled();
     });
 
-    it('should throw 404 error if token is invalid', async () => {
+    it('should throw InvalidTokenError if token is invalid', async () => {
       // Arrange
       const mockConnection = {
         release: jest.fn(),
@@ -267,15 +285,19 @@ describe('BoardingService', () => {
       mockTokenRepo.findUnusedByHash.mockResolvedValue(null); // Token not found
 
       // Act & Assert
-      await expect(boardingService.setPasswordFromToken(validToken, validPassword))
-        .rejects
-        .toMatchObject({
-          status: 404,
-          message: 'Invalid or expired token',
-        });
+      await expect(
+        boardingService.setPasswordFromToken(validToken, validPassword)
+      ).rejects.toThrow(InvalidTokenError);
+
+      await expect(
+        boardingService.setPasswordFromToken(validToken, validPassword)
+      ).rejects.toMatchObject({
+        statusCode: 404,
+        errorCode: 'INVALID_TOKEN',
+      });
     });
 
-    it('should throw 410 error if token is expired', async () => {
+    it('should throw TokenExpiredError if token is expired', async () => {
       // Arrange
       const mockConnection = {
         release: jest.fn(),
@@ -283,25 +305,31 @@ describe('BoardingService', () => {
 
       const tokenCreatedAt = new Date(Date.now() - 13 * 60 * 60 * 1000); // 13 hours ago
 
-      mockUserRepo.getConnection.mockResolvedValue(mockConnection);
-      mockTokenRepo.findUnusedByHash.mockResolvedValue({
+      const mockToken: PasswordToken = {
         id: 456,
         user_id: 123,
         token_hash: 'hash123',
         created_at: tokenCreatedAt,
         used: 0,
-      });
+      };
+
+      mockUserRepo.getConnection.mockResolvedValue(mockConnection);
+      mockTokenRepo.findUnusedByHash.mockResolvedValue(mockToken);
 
       // Act & Assert
-      await expect(boardingService.setPasswordFromToken(validToken, validPassword))
-        .rejects
-        .toMatchObject({
-          status: 410,
-          message: 'Token expired',
-        });
+      await expect(
+        boardingService.setPasswordFromToken(validToken, validPassword)
+      ).rejects.toThrow(TokenExpiredError);
+
+      await expect(
+        boardingService.setPasswordFromToken(validToken, validPassword)
+      ).rejects.toMatchObject({
+        statusCode: 410,
+        errorCode: 'TOKEN_EXPIRED',
+      });
     });
 
-    it('should throw 400 error if password is too short', async () => {
+    it('should throw WeakPasswordError if password is too short', async () => {
       // Arrange
       const mockConnection = {
         release: jest.fn(),
@@ -309,22 +337,28 @@ describe('BoardingService', () => {
 
       const tokenCreatedAt = new Date();
 
-      mockUserRepo.getConnection.mockResolvedValue(mockConnection);
-      mockTokenRepo.findUnusedByHash.mockResolvedValue({
+      const mockToken: PasswordToken = {
         id: 456,
         user_id: 123,
         token_hash: 'hash123',
         created_at: tokenCreatedAt,
         used: 0,
-      });
+      };
+
+      mockUserRepo.getConnection.mockResolvedValue(mockConnection);
+      mockTokenRepo.findUnusedByHash.mockResolvedValue(mockToken);
 
       // Act & Assert
-      await expect(boardingService.setPasswordFromToken(validToken, 'short'))
-        .rejects
-        .toMatchObject({
-          status: 400,
-          message: 'Password must be at least 12 characters',
-        });
+      await expect(boardingService.setPasswordFromToken(validToken, 'short')).rejects.toThrow(
+        WeakPasswordError
+      );
+
+      await expect(boardingService.setPasswordFromToken(validToken, 'short')).rejects.toMatchObject(
+        {
+          statusCode: 400,
+          errorCode: 'WEAK_PASSWORD',
+        }
+      );
     });
   });
 });

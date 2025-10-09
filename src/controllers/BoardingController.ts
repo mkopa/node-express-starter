@@ -1,19 +1,21 @@
 import { Service } from 'typedi';
 import { Request, Response, NextFunction } from 'express';
-import { BoardingService, BoardingData } from '../services/BoardingService';
+import { BoardingService } from '../services/BoardingService';
+import { BoardingDto } from '../types/dtos/boarding.dto';
+import {
+  BoardingSuccessResponse,
+  SetPasswordSuccessResponse,
+} from '../types/responses/boarding.response';
 import logger from '../utils/logger';
 
 /**
- * Boarding Controller - handles HTTP requests for user onboarding
+ * Boarding Controller
+ * Handles HTTP requests for user onboarding
  * Separates HTTP layer from business logic
- * Follows Controller pattern with Dependency Injection
+ * Uses typed DTOs and responses for type safety
  */
 @Service()
 export class BoardingController {
-  /**
-   * Constructor with automatic dependency injection
-   * @param boardingService - Business logic service injected by TypeDI
-   */
   constructor(private readonly boardingService: BoardingService) {
     logger.debug('BoardingController initialized with DI');
   }
@@ -34,22 +36,23 @@ export class BoardingController {
    *
    * Errors:
    * - 400: Validation error
-   * - 404: Company not found
-   * - 409: User already exists
+   * - 404: Company not found (CompanyNotFoundError)
+   * - 409: User already exists (UserAlreadyExistsError)
    * - 500: Internal server error
    */
   async createUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       logger.info(`Boarding request received for email: ${req.body.email}`);
 
-      const data: BoardingData = req.body;
+      const data: BoardingDto = req.body;
       const result = await this.boardingService.onboardUser(data);
 
-      res.status(201).json({
+      const response: BoardingSuccessResponse = {
         message: result.message,
         token: result.token,
-      });
+      };
 
+      res.status(201).json(response);
       logger.info(`✅ User boarding successful: ${data.email}`);
     } catch (err) {
       logger.error('❌ Boarding controller error:', err);
@@ -71,9 +74,9 @@ export class BoardingController {
    * { success: true, message: "Password set successfully" }
    *
    * Errors:
-   * - 400: Invalid password
-   * - 404: Invalid token
-   * - 410: Token expired
+   * - 400: Invalid password (WeakPasswordError)
+   * - 404: Invalid token (InvalidTokenError)
+   * - 410: Token expired (TokenExpiredError)
    * - 500: Internal server error
    */
   async setPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -93,7 +96,9 @@ export class BoardingController {
 
       const result = await this.boardingService.setPasswordFromToken(token, password);
 
-      res.status(200).json(result);
+      const response: SetPasswordSuccessResponse = result;
+
+      res.status(200).json(response);
       logger.info('✅ Password setup successful');
     } catch (err) {
       logger.error('❌ Set password controller error:', err);
