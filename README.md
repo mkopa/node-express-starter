@@ -1,14 +1,10 @@
-# Node Express Starter
+## Node Express Starter
 
-> **Enterprise-grade Node.js foundation implementing Domain-Driven Design, 
-> Layered Architecture, and SOLID principles**
+A production-ready **Node.js blueprint** implementing **Domain-Driven Design**, **Layered Architecture**, and **SOLID principles**.
 
-A production-ready architectural blueprint for building maintainable backend systems. 
-This starter demonstrates industry-standard patterns: dependency injection, 
-repository pattern, domain-driven design, and clean separation of concerns.
+Designed to demonstrate **scalable backend architecture**, it includes patterns like **dependency injection**, the **repository pattern**, and **clean separation of concerns**.
 
-Built with TypeScript, Express.js, and MySQL—designed for teams building 
-complex business applications.
+Built with **TypeScript**, **Express.js**, and **MySQL** — tailored for teams delivering **complex business applications**.
 
 ## 🎯 Architecture Highlights
 
