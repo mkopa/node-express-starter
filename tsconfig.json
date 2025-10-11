@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "CommonJS",
-    "lib": ["ES2020"],
+    "target": "ES2022",
+    "module": "nodenext",
+    "lib": ["ES2022"],
     "outDir": "dist",
     "rootDir": "src",
     "strict": true,
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
@@ -15,20 +15,6 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["node"],
     "typeRoots": ["./node_modules/@types", "./src/types"],
-    "ignoreDeprecations": "6.0",
-    "baseUrl": ".",
-    "paths": {
-      "@/types": ["src/types"],
-      "@/types/*": ["src/types/*"],
-      "@/repositories": ["src/repositories"],
-      "@/repositories/*": ["src/repositories/*"],
-      "@/services": ["src/services"],
-      "@/services/*": ["src/services/*"],
-      "@/controllers": ["src/controllers"],
-      "@/controllers/*": ["src/controllers/*"],
-      "@/utils": ["src/utils"],
-      "@/utils/*": ["src/utils/*"]
-    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.test.ts"]

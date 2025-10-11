@@ -1,7 +1,7 @@
 {
-  "name": "boarding-system",
+  "name": "node-express-starter",
   "version": "1.0.0",
-  "description": "User boarding system (Express + TypeScript)",
+  "description": "Node Express Starter (Express + TypeScript)",
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only --ignore-watch node_modules --no-notify src/index.ts",

@@ -29,8 +29,8 @@ Built with **TypeScript**, **Express.js**, and **MySQL** — tailored for teams 
 
 ```bash
 # 1. Clone repository
-git clone git@github.com:mkopa/boarding-system.git
-cd boarding-system
+git clone git@github.com:mkopa/node-express-starter.git
+cd node-express-starter
 
 # 2. Install dependencies (optional, for local development)
 npm install
@@ -291,7 +291,7 @@ router.post('/boarding', controller.createUser.bind(controller));
 ## 📁 Project Structure
 
 ```
-boarding-service/
+node-express-starter/
 ├── src/
 │   ├── app/
 │   │   ├── app.ts                    # Express configuration
