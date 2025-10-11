@@ -1,4 +1,4 @@
-# Express Starter
+# Node Express Starter
 
 > **Enterprise-grade Node.js foundation implementing Domain-Driven Design, 
 > Layered Architecture, and SOLID principles**
@@ -26,7 +26,7 @@ complex business applications.
 ### Prerequisites
 
 - Docker & Docker Compose (required)
-- Node.js 18+ (optional, for local development)
+- Node.js 22+ (optional, for local development)
 - Git
 
 ### Installation & Run
