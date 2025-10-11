@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { Container } from 'typedi';
 import { Pool } from 'mysql2/promise';
 import { HealthCheckResponse } from '../../types/responses/health.response';
+import { formatUptime } from '../../utils/formatUptime';
 
 /**
  * Health check router
@@ -28,7 +29,7 @@ export function healthRouter(): Router {
         status: 'ok',
         timestamp: new Date().toISOString(),
         database: 'connected',
-        uptime: process.uptime(),
+        uptime: formatUptime(process.uptime()),
         responseTime: `${responseTime}ms`,
         environment: process.env.NODE_ENV || 'development',
         version: process.env.npm_package_version || '1.0.0',
@@ -42,7 +43,7 @@ export function healthRouter(): Router {
         status: 'error',
         timestamp: new Date().toISOString(),
         database: 'disconnected',
-        uptime: process.uptime(),
+        uptime: formatUptime(process.uptime()),
         responseTime: `${responseTime}ms`,
         environment: process.env.NODE_ENV || 'development',
         version: process.env.npm_package_version || '1.0.0',

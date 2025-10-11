@@ -1,4 +1,5 @@
 import mysql, { Pool } from 'mysql2/promise';
+import logger from '../utils/logger';
 
 export async function createDbPool(): Promise<Pool> {
   const pool = mysql.createPool({
@@ -13,6 +14,6 @@ export async function createDbPool(): Promise<Pool> {
   });
 
   await pool.query('SELECT 1');
-  console.log('✅ Connected to MySQL');
+  logger.info('✅ Connected to MySQL');
   return pool;
 }
