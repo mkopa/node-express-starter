@@ -1,6 +1,14 @@
-# Boarding System API
+# Express Starter
 
-> Professional user onboarding system with Express.js + TypeScript + MySQL + Dependency Injection
+> **Enterprise-grade Node.js foundation implementing Domain-Driven Design, 
+> Layered Architecture, and SOLID principles**
+
+A production-ready architectural blueprint for building maintainable backend systems. 
+This starter demonstrates industry-standard patterns: dependency injection, 
+repository pattern, domain-driven design, and clean separation of concerns.
+
+Built with TypeScript, Express.js, and MySQL—designed for teams building 
+complex business applications.
 
 ## 🎯 Architecture Highlights
 

@@ -140,3 +140,4 @@ vite.config.ts.timestamp-*
 
 .dpignore
 boarding_system_api.source.txt
+src/types/.dplock
